@@ -17,6 +17,6 @@ resource "helm_release" "elasticsearch" {
   repository = "https://charts.bitnami.com/bitnami"
   namespace  = kubernetes_namespace.elasticsearch.metadata.0.name
   values     = ["${file("../helm_charts/elasticsearch/values.yaml")}"]
-  depends_on = [module.aks.aks_nodepool]
+  depends_on = [module.aks_nodepool[0]]
 }
 
