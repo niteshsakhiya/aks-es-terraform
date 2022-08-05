@@ -1,0 +1,23 @@
+tolerations:
+  - key: "allow"
+    operator: "Equal"
+    value: "elastic-master"
+    effect: "NoSchedule"
+  - key: "allow"
+    operator: "Equal"
+    value: "elastic-data"
+    effect: "NoSchedule"
+  - key: "allow"
+    operator: "Equal"
+    value: "elastic-coordinating"
+    effect: "NoSchedule"
+
+env:
+- name: FLUENT_ELASTICSEARCH_HOST
+  value: "elasticsearch-coordinating-hl.elasticsearch"
+- name: FLUENT_ELASTICSEARCH_PORT
+  value: "9200"
+- name: FLUENT_CONTAINER_TAIL_EXCLUDE_PATH
+  value: "/var/log/containers/fluent*"
+- name: FLUENT_CONTAINER_TAIL_PARSER_TYPE
+  value: "/^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/"

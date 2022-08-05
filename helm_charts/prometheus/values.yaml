@@ -1,0 +1,143 @@
+nodeExporter:
+  tolerations:
+    - key: "allow"
+      operator: "Equal"
+      value: "elastic-master"
+      effect: "NoSchedule"
+    - key: "allow"
+      operator: "Equal"
+      value: "elastic-data"
+      effect: "NoSchedule"
+    - key: "allow"
+      operator: "Equal"
+      value: "elastic-coordinating"
+      effect: "NoSchedule"
+server:
+  resources:
+    limits:
+      cpu: 1000m 
+      memory: 2048Mi
+    requests:
+      cpu: 500m
+      memory: 2048Mi
+  persistentVolume:
+    enabled: "true"
+    size: "10Gi"
+    storageClass: "azurefile-custom"
+  retention: "7d"
+  global:
+    scrape_interval: "10s"
+    evaluation_interval: "10s"
+
+alertmanager:
+  persistentVolume:
+    enabled: "true"
+    size: "4Gi"
+    storageClass: "azurefile-custom"
+#  configFromSecret: "alertmanager-config"
+      
+
+############################################################################################
+################################ Alertmanager rules ########################################
+############################################################################################
+# serverFiles:
+#   alerting_rules.yml:
+#     groups:
+#       - name: pod.rules
+#         rules:
+#           - alert: Container high memory(RAM) usage
+#             expr: (sum by(instance, pod, container) (container_memory_working_set_bytes{container!=""}) / sum by(instance, pod, container) (container_spec_memory_limit_bytes{container!=""} > 0) * 100) > 90
+#             for: 2m
+#             labels:
+#               severity: warning
+#             annotations:
+#               summary: Container Memory usage (instance {{ $labels.instance }})
+#               description: "Container Memory usage is above 90%. VALUE = {{ $value }}%  Pod name = {{ $labels.pod }}"
+#           - alert: Container high CPU usage
+#             expr: (sum(rate(container_cpu_usage_seconds_total{image!="", container!=""}[2m])) by (pod, container, instance, namespace) / sum(container_spec_cpu_quota{ image!="", container!=""}/container_spec_cpu_period{image!="", container!=""}) by (pod, container, instance, namespace) * 100) > 90
+#             for: 2m
+#             labels:
+#               severity: warning
+#             annotations:
+#               summary: Container CPU usage (instance {{ $labels.instance }})
+#               description: "Container CPU usage is above 90%. VALUE = {{ $value }}%  Pod name = {{ $labels.pod }}"
+#           - alert: Container OOM Killed
+#             expr: sum by (pod, container, reason, namespace) (kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}) * on (pod,container) group_left sum by (pod, container, namespace) (changes(kube_pod_container_status_restarts_total{}[1m])) > 0
+#             for: 0m
+#             labels:
+#               severity: critical
+#             annotations:
+#               summary: Kubernetes container OOM killed (instance {{ $labels.kubernetes_node }})
+#               description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} has been OOMKilled {{ $value }} times in the last 2 minutes."
+#           - alert: Volume running out of disk space
+#             expr: kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes * 100 < 10
+#             for: 2m
+#             labels:
+#               severity: warning
+#             annotations:
+#               summary: Kubernetes Volume out of disk space (instance {{ $labels.instance }})
+#               description: "Volume is almost full (< 10% left). VALUE = {{ $value }}%  Claim name = {{ $labels.persistentvolumeclaim }}"
+#           - alert: Pod crash looping
+#             expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} > 0
+#             for: 0m
+#             labels:
+#               severity: critical
+#             annotations:
+#               summary: Kubernetes pod crash looping (instance {{ $labels.kubernetes_node }})
+#               description: "Pod {{ $labels.pod }} is crash looping.  Restart count = {{ $value }}.  Namespace = {{ $labels.namespace }}"
+#           - alert: Node running out of memory(RAM)
+#             expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+#             for: 2m
+#             labels:
+#               severity: warning
+#             annotations:
+#               summary: Node running out of memory (instance {{ $labels.kubernetes_node }})
+#               description: "Node memory is filling up (< 10% left).  VALUE = {{ $value }}%"
+#           - alert: Node under memory pressure
+#             expr: rate(node_vmstat_pgmajfault[1m]) > 1000
+#             for: 2m
+#             labels:
+#               severity: critical
+#             annotations:
+#               summary: Host memory under memory pressure (instance {{ $labels.kubernetes_node }})
+#               description: "The node is under heavy memory pressure. High rate of major page faults.  VALUE = {{ $value }}."
+#           - alert: Node running out of disk space
+#             expr: (node_filesystem_avail_bytes * 100) / node_filesystem_size_bytes < 10 and ON (instance, device, mountpoint) node_filesystem_readonly == 0
+#             for: 2m
+#             labels:
+#               severity: warning
+#             annotations:
+#               summary: Node out of disk space (instance {{ $labels.kubernetes_node }})
+#               description: "Disk is almost full (< 10% left). VALUE = {{ $value }}."
+#           - alert: Node high CPU usage
+#             expr: 100 - (avg by(kubernetes_node) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 90
+#             for: 1m
+#             labels:
+#               severity: warning
+#             annotations:
+#               summary: Node has high CPU load (instance {{ $labels.kubernetes_node }})
+#               description: "CPU load is > 80%\n  VALUE = {{ $value }}%."
+#           - alert: Host OOM Kill detected
+#             expr: increase(node_vmstat_oom_kill[1m]) > 0
+#             for: 0m
+#             labels:
+#               severity: critical
+#             annotations:
+#               summary: Host OOM kill detected (instance {{ $labels.kubernetes_node }})
+#               description: "OOM kill detected.  OOM kill count = {{ $value }}."
+#           - alert: Host clock skew detected
+#             expr: (node_timex_offset_seconds > 0.05 and deriv(node_timex_offset_seconds[5m]) >= 0) or (node_timex_offset_seconds < -0.05 and deriv(node_timex_offset_seconds[5m]) <= 0)
+#             for: 2m
+#             labels:
+#               severity: warning
+#             annotations:
+#               summary: Host clock skew (instance {{ $labels.kubernetes_node }})
+#               description: "Clock skew detected. Clock is out of sync. VALUE = {{ $value }}."
+#           - alert: Pod not ready
+#             expr: sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown"}) > 0
+#             for: 1h
+#             labels:
+#               severity: warning
+#             annotations:
+#               summary: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for longer than an hour.
+

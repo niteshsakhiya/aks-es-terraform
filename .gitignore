@@ -1,0 +1,6 @@
+.idea
+.vscode
+core_cluster/.terraform/*
+core_cluster/terraform.tfstate
+core_cluster/terraform.tfstate.backup
+core_cluster/.terraform.lock.hcl
